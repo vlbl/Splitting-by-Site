@@ -1,0 +1,50 @@
+def split_the_folds(arr,number_of_folds):
+   
+    indeces_of_sorted_array = np.argsort(arr)
+    arr.sort()
+    folds = []
+    indeces_of_sites = []
+    mean_number_per_fold = np.mean(arr)
+    
+    biggest_fold = len(arr)-1
+    smallest_fold = 0
+    for fold in range(number_of_folds):
+
+        
+        sites_for_fold = []
+        indeces_for_fold = []
+        not_enough = True
+ 
+        sites_for_fold.append(arr[biggest_fold])
+        indeces_for_fold.append(biggest_fold)
+        number_of_subjects_in_fold= arr[biggest_fold]
+        
+        diff_with_mean_old = abs(number_of_subjects_in_fold-mean_number_per_fold)
+        
+        while not_enough:
+
+            number_of_subjects_in_fold=number_of_subjects_in_fold + arr[smallest_fold]
+            diff_with_mean_new = abs(number_of_subjects_in_fold-mean_number_per_fold)
+  
+            
+            if diff_with_mean_new>diff_with_mean_old:
+                not_enough = False
+                mean_number_per_fold = np.sum(arr[smallest_fold:biggest_fold])/(number_of_folds-(fold+1))
+            else:
+                diff_with_mean_old = diff_with_mean_new
+                sites_for_fold.append(arr[smallest_fold])
+                indeces_for_fold.append(smallest_fold)
+                smallest_fold+=1
+        
+        
+        
+        folds.append(sites_for_fold)
+        indeces_of_sites.append(indeces_for_fold)
+        biggest_fold-=1
+        
+        
+        
+        
+
+    
+    return folds,indeces_of_sites,indeces_of_sorted_array
