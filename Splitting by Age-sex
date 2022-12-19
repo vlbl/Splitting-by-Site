@@ -1,0 +1,126 @@
+def split_one_fold_age_and_sex(one_site,freesurfer,num_folds):
+    
+    '''
+        function to split one fold based on the age and sex(to be done)
+        Idea: taking N subjects from the whole pool of subjects, compare its mean
+        with the resting mean and add new subjects according to the difference of means
+        (fold mean > pool mean : add younger subject to fold mean)
+    '''
+    
+    X_folds_inf = []
+    X_folds = []
+    subjects_in_fold = int(len(one_site)/num_folds)
+    
+    print('Subjects in fold',subjects_in_fold)
+    
+    
+    
+    
+    counter_of_mismatches = 0
+    for fold in range(num_folds):
+        
+
+        fold_is_full = False
+        i = 0
+        
+        while fold_is_full==False:
+            
+            
+            
+            if i==0:
+                
+                one_fold = one_site.sample(n=1,axis= 0)
+                print('one_fold',one_fold)
+                one_site = one_site.drop(one_fold.index.values,axis =0)
+                X_one_fold = freesurfer.iloc[one_fold.index.values]
+                
+                
+                mean_age_one_fold = np.mean(one_fold['Age'])
+                mean_age  = np.mean(one_site['Age'])
+                mean_sex_one_fold = np.mean(one_fold['Sex'])
+                mean_sex = np.mean(one_site['Sex'])
+                
+            else:
+             #   print('Mean in new fold:',mean_age_one_fold)
+             #   print('Mean in resing data:',mean_age)
+                if mean_age_one_fold>=mean_age:
+                   # print('Searching for subject with smaller age')
+                    criteria = one_site[one_site['Age'] <= mean_age_one_fold]
+                    
+                    if mean_sex_one_fold<mean_sex:
+                        
+                        new_criteria = criteria[criteria['Sex']==2]
+                    else:
+                        new_criteria = criteria[criteria['Sex']==1]
+                    
+                    if len(new_criteria)>0:
+                        criteria = new_criteria
+                    else:
+                        counter_of_mismatches+=1
+                    
+                    chosen_subject = criteria.sample(n=1,axis=0)
+                    one_fold = one_fold.append(chosen_subject)
+                    X_one_fold = X_one_fold.append(freesurfer.iloc[chosen_subject.index.values])
+                    
+                    one_site = one_site.drop(chosen_subject.index.values,axis =0)
+                    
+                else:
+                   # print('Searching for subject with bigger age')
+                    criteria = one_site[(one_site['Age'] > mean_age_one_fold)]
+                    
+                    if mean_sex_one_fold<mean_sex:
+                        
+                        new_criteria = criteria[criteria['Sex']==2]
+                    else:
+                        new_criteria = criteria[criteria['Sex']==1]
+                    
+                    if len(new_criteria)>0:
+                        criteria = new_criteria
+                    else:
+                        counter_of_mismatches+=1
+                        
+               #     print(criteria)
+                    try:
+                        chosen_subject = criteria.sample(n=1,axis=0)
+                        one_fold = one_fold.append(chosen_subject)
+                        X_one_fold = X_one_fold.append(freesurfer.iloc[chosen_subject.index.values])
+                        one_site = one_site.drop(chosen_subject.index.values,axis =0)
+                    except ValueError:
+                        
+                        X_folds_inf.append(one_fold)
+                        X_folds.append(X_one_fold)
+                        
+                        return X_folds_inf,X_folds,counter_of_mismatches
+                    
+                        
+                    
+            i+=1
+            
+            mean_age_one_fold= np.mean(one_fold['Age'])
+            mean_age  = np.mean(one_site['Age'])
+            mean_sex_one_fold = np.mean(one_fold['Sex'])
+            mean_sex = np.mean(one_site['Sex'])
+            
+            if len(one_fold)==subjects_in_fold:
+                fold_is_full = True
+                    
+                X_folds_inf.append(one_fold)
+                X_folds.append(X_one_fold)
+            
+                if fold ==num_folds-1:
+                    '''
+                        Resting subjects add to random folds
+                    '''
+    
+                    for rest_subject in range(len(one_site)):
+                        
+                        rand_fold = np.random.randint(0,num_folds)
+                        chosen_subject = one_site.iloc[rest_subject]
+                        
+                    #     print(chosen_subject)
+                        X_folds[rand_fold] = X_folds[rand_fold].append(freesurfer[chosen_subject['SubjID']==freesurfer['SubjID']])
+                        
+                        X_folds_inf[rand_fold] = X_folds_inf[rand_fold].append(chosen_subject)
+                        print('Subject', one_site.iloc[rest_subject]['Sex'] , 'added to fold ', rand_fold)
+                        
+    return X_folds_inf,X_folds,counter_of_mismatches
